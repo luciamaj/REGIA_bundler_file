@@ -97,6 +97,16 @@ export default
     }
     puts ""
 
+    # WRITE CACHE MANIFEST
+    files =  Dir.glob("pacchetti/#{topic}/**/*").select{ |e| File.file? e };
+    manifest = File.new("pacchetti/#{topic}/manifest.mf", "w");
+    manifest.puts("CACHE:")
+    files.each { |f| 
+        manifest.puts(f);
+    }
+    manifest.close
+    # END CACHE MANIFEST
+
     filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{name}/assets/*"].map { |p| File.basename(p) }
     filesInFolder.each { |f| 
         path = "#{$dir}/pacchetti/#{topic}/#{name}/assets/#{f}"
@@ -119,7 +129,6 @@ export default
     
     puts "Versioni:"
     puts log(topic)
-
 end
 
 if ARGV.length == 0
@@ -196,7 +205,6 @@ elsif ARGV[0] == 'versioni'
     end
 
     puts log(topic)
-
 elsif ARGV[0] == 'topics'
     topics.each { |t| puts t }
 
