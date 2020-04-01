@@ -20,7 +20,6 @@ topicsJSON.values.each { |v|
     }
 }
 
-
 def isConnettore(connettore)
     @connettori.include?(connettore);
 end
@@ -97,6 +96,15 @@ export default
     }
     puts ""
 
+    filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{name}/assets/*"].map { |p| File.basename(p) }
+    filesInFolder.each { |f| 
+        path = "#{$dir}/pacchetti/#{topic}/#{name}/assets/#{f}"
+        if !files.include?(f) 
+            # puts "Removing #{path}"
+            FileUtils.rm(path)
+        end
+    }
+
     # WRITE CACHE MANIFEST
     files =  Dir.glob("pacchetti/#{topic}/**/*").select{ |e| File.file? e };
     manifest = File.new("pacchetti/#{topic}/manifest.mf", "w");
@@ -106,15 +114,6 @@ export default
     }
     manifest.close
     # END CACHE MANIFEST
-
-    filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{name}/assets/*"].map { |p| File.basename(p) }
-    filesInFolder.each { |f| 
-        path = "#{$dir}/pacchetti/#{topic}/#{name}/assets/#{f}"
-        if !files.include?(f) 
-            # puts "Removing #{path}"
-            FileUtils.rm(path)
-        end
-    }
     
     Dir.chdir("pacchetti/#{topic}") do
         status = `git status 2>&1`
