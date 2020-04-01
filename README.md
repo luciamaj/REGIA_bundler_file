@@ -1,9 +1,7 @@
-# bundler-file
-
 # BUNDLER
 
 ## NOTE DI SETUP
-L'albero delle applicazioni deve avere la seguente struttura:
+L'albero deve avere la seguente struttura:
  ```
 +-- bundler
 |   +-- bunder.rb
