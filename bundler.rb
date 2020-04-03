@@ -47,6 +47,7 @@ def publish(connettore)
     # name = data["name"];
 
     layout = data["layout"];
+    layoutType = data["layout_type"];
     dataString = <<-Q
 export default
 #{jsonData}
@@ -62,7 +63,9 @@ export default
     # crea la cartella per il layout
     Dir.mkdir("pacchetti/#{topic}/#{name}/layout") unless File.exists?("pacchetti/#{topic}/#{name}/layout")
     # crea la cartella per gli assets
-    Dir.mkdir("pacchetti/#{topic}/#{name}/assets") unless File.exists?("pacchetti/#{topic}/#{name}/assets")
+    Dir.mkdir("pacchetti/#{topic}/#{name}/static") unless File.exists?("pacchetti/#{topic}/#{name}/static")
+    # crea la cartella per data
+    Dir.mkdir("pacchetti/#{topic}/#{name}/data") unless File.exists?("pacchetti/#{topic}/#{name}/data")
 
     Dir.chdir("pacchetti/#{topic}") do
         status = `git status 2>&1`
@@ -79,26 +82,46 @@ export default
         end
     end
 
-    FileUtils.cp_r("layouts/#{layout}/.", "pacchetti/#{topic}/#{name}/layout")
-    File.write("pacchetti/#{topic}/#{name}/data.js", dataString);
+    # Build if webpack #WIP 
+
+    Dir.chdir("layouts/#{layout}") do
+        if layoutType == "webpack"
+            puts "scrivendo il file data per il config";
+            File.write("data/data.js", dataString);
+
+            puts "Compiling webpack"
+            `npm run build`
+            puts ""
+        end
+    end
+
+    if layoutType == "webpack"
+        puts "get from dist/"
+        FileUtils.cp_r("layouts/#{layout}/dist/.", "pacchetti/#{topic}/#{name}/layout");
+    else
+        puts "get from main folder"
+        FileUtils.cp_r("layouts/#{layout}/.", "pacchetti/#{topic}/#{name}/layout");
+    end
+
+    File.write("pacchetti/#{topic}/#{name}/data/data.js", dataString);
     filesRegex = /\"([^\"]+\.[^\"]+)\"/
     files = jsonData.scan(filesRegex).map { |m| m[0] }
     puts "Asset da caricare"
     files.each { |f|
-        path = "assets/#{f}"
+        path = "static/#{f}"
         # puts path;
         if File.file?(path)
             puts "\u2713 #{path}"
-            FileUtils.ln_sf(File.realpath(path), "pacchetti/#{topic}/#{name}/assets")
+            FileUtils.ln_sf(File.realpath(path), "pacchetti/#{topic}/#{name}/static")
         else
             puts "\u2717 #{path}"
         end
     }
     puts ""
 
-    filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{name}/assets/*"].map { |p| File.basename(p) }
+    filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{name}/static/*"].map { |p| File.basename(p) }
     filesInFolder.each { |f| 
-        path = "#{$dir}/pacchetti/#{topic}/#{name}/assets/#{f}"
+        path = "#{$dir}/pacchetti/#{topic}/#{name}/static/#{f}"
         if !files.include?(f) 
             # puts "Removing #{path}"
             FileUtils.rm(path)
