@@ -49,7 +49,7 @@ def publish(connettore)
     layout = data["layout"];
     layoutType = data["layout_type"];
     dataString = <<-Q
-export default
+let data = 
 #{jsonData}
     Q
 
@@ -63,7 +63,7 @@ export default
     # crea la cartella per il layout
     Dir.mkdir("pacchetti/#{topic}/#{name}/layout") unless File.exists?("pacchetti/#{topic}/#{name}/layout")
     # crea la cartella per gli assets
-    Dir.mkdir("pacchetti/#{topic}/#{name}/static") unless File.exists?("pacchetti/#{topic}/#{name}/static")
+    Dir.mkdir("pacchetti/#{topic}/#{name}/layout/assets") unless File.exists?("pacchetti/#{topic}/#{name}/layout/assets")
     # crea la cartella per data
     Dir.mkdir("pacchetti/#{topic}/#{name}/data") unless File.exists?("pacchetti/#{topic}/#{name}/data")
 
@@ -82,46 +82,27 @@ export default
         end
     end
 
-    # Build if webpack #WIP 
-
-    Dir.chdir("layouts/#{layout}") do
-        if layoutType == "webpack"
-            puts "scrivendo il file data per il config";
-            File.write("data/data.js", dataString);
-
-            puts "Compiling webpack"
-            `npm run build`
-            puts ""
-        end
-    end
-
-    if layoutType == "webpack"
-        puts "get from dist/"
-        FileUtils.cp_r("layouts/#{layout}/dist/.", "pacchetti/#{topic}/#{name}/layout");
-    else
-        puts "get from main folder"
-        FileUtils.cp_r("layouts/#{layout}/.", "pacchetti/#{topic}/#{name}/layout");
-    end
+    FileUtils.cp_r("layouts/#{layout}/.", "pacchetti/#{topic}/#{name}/layout");
 
     File.write("pacchetti/#{topic}/#{name}/data/data.js", dataString);
     filesRegex = /\"([^\"]+\.[^\"]+)\"/
     files = jsonData.scan(filesRegex).map { |m| m[0] }
     puts "Asset da caricare"
     files.each { |f|
-        path = "static/#{f}"
+        path = "assets/#{f}"
         # puts path;
         if File.file?(path)
             puts "\u2713 #{path}"
-            FileUtils.ln_sf(File.realpath(path), "pacchetti/#{topic}/#{name}/static")
+            FileUtils.ln_sf(File.realpath(path), "pacchetti/#{topic}/#{name}/layout/assets")
         else
             puts "\u2717 #{path}"
         end
     }
     puts ""
 
-    filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{name}/static/*"].map { |p| File.basename(p) }
+    filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{name}/layout/assets/*"].map { |p| File.basename(p) }
     filesInFolder.each { |f| 
-        path = "#{$dir}/pacchetti/#{topic}/#{name}/static/#{f}"
+        path = "#{$dir}/pacchetti/#{topic}/#{name}/layout/assets/#{f}"
         if !files.include?(f) 
             # puts "Removing #{path}"
             FileUtils.rm(path)
@@ -129,6 +110,8 @@ export default
     }
 
     # WRITE CACHE MANIFEST
+    puts "sto scrivendo il manifest";
+
     files =  Dir.glob("pacchetti/#{topic}/**/*").select{ |e| File.file? e };
     manifest = File.new("pacchetti/#{topic}/manifest.mf", "w");
     manifest.puts("CACHE:")
