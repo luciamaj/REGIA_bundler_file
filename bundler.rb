@@ -47,7 +47,6 @@ def publish(connettore)
     # name = data["name"];
 
     layout = data["layout"];
-    layoutType = data["layout_type"];
     dataString = <<-Q
 let data = 
 #{jsonData}
@@ -112,25 +111,25 @@ let data =
     # WRITE CACHE MANIFEST
     puts "sto scrivendo il manifest";
 
-    files =  Dir.glob("pacchetti/#{topic}/**/*").select{ |e| File.file? e };
-    manifest = File.new("pacchetti/#{topic}/manifest.mf", "w");
-    manifest.puts("CACHE:")
-    files.each { |f| 
-        manifest.puts(f);
-    }
-    manifest.close
-    # END CACHE MANIFEST
-    
     Dir.chdir("pacchetti/#{topic}") do
+        files =  Dir.glob("**/*").select{ |e| File.file? e };
+        manifest = File.new("manifest.mf", "w");
+        manifest.puts("CACHE:")
+        files.each { |f| 
+            manifest.puts(f);
+        }
+        manifest.close
+
         status = `git status 2>&1`
         if status.include? "working tree clean"
             puts "Niente di nuovo da pubblicare"
             exit
         end
-
+    
         `git add -A .`
         `git commit -m "#{Time.now}"`
     end
+    # END CACHE MANIFEST
     
     puts "Versioni:"
     puts log(topic)
