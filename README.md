@@ -44,8 +44,7 @@ def publish(connettore)
     
     name = connettore
     topic = data["topic"];
-    # name = data["name"];
-
+    type = data["type"];
     layout = data["layout"];
     dataString = <<-Q
 let data = 
@@ -108,6 +107,11 @@ let data =
         end
     }
 
+    # MOVE CONFIG FILES IF ROKU
+    if type == "player"
+        FileUtils.cp_r("roku-util/.", "pacchetti/#{topic}");
+    end
+
     # WRITE CACHE MANIFEST
     puts "sto scrivendo il manifest";
 
@@ -116,6 +120,7 @@ let data =
         manifest = File.new("manifest.mf", "w");
         manifest.puts("CACHE:")
         files.each { |f|
+            # tolgo gli spazi
             manifest.puts(f.gsub(/\s/,'%20'));
         }
         manifest.close
