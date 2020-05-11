@@ -10,15 +10,26 @@ $dir = File.dirname(File.realpath(__FILE__))
 puts $dir;
 
 @connettori = Dir["#{$dir}/connettori/*"].map { |p| File.basename(p, File.extname(p)) }
-topicsJSON = JSON.parse(File.read('topics/topics.json'));
-topics = topicsJSON.keys;
+
+jsonData = `#{$dir}/topics/topics.rb`;
+topicsJSON = JSON.parse(jsonData);
+topicArray = topicsJSON["data"]["result"];
+topics = [];
 appsAPI = [];
 
-topicsJSON.values.each { |v|
-    v.each { |a|
-        appsAPI << a;
+for topic in topicArray do
+    topics.push(topic.keys);
+end   
+
+topicArray.each { |t|
+    t.values.each { |k|
+        k.each { |el|
+            appsAPI << el;
+        }
     }
 }
+
+# puts "APPSAPI", appsAPI[0]
 
 def isConnettore(connettore)
     @connettori.include?(connettore);
@@ -44,8 +55,7 @@ def publish(connettore)
     
     name = connettore
     topic = data["topic"];
-    # name = data["name"];
-
+    type = data["type"];
     layout = data["layout"];
     dataString = <<-Q
 let data = 
@@ -108,6 +118,11 @@ let data =
         end
     }
 
+    # MOVE CONFIG FILES IF ROKU
+    if type == "player"
+        FileUtils.cp_r("roku-util/.", "pacchetti/#{topic}");
+    end
+
     # WRITE CACHE MANIFEST
     puts "sto scrivendo il manifest";
 
@@ -115,8 +130,9 @@ let data =
         files =  Dir.glob("**/*").select{ |e| File.file? e };
         manifest = File.new("manifest.mf", "w");
         manifest.puts("CACHE:")
-        files.each { |f| 
-            manifest.puts(f);
+        files.each { |f|
+            # tolgo gli spazi
+            manifest.puts(f.gsub(/\s/,'%20'));
         }
         manifest.close
 
@@ -215,9 +231,9 @@ elsif ARGV[0] == 'topics'
 elsif ARGV[0] == 'connettori'
     appsAPI.each { |c| 
         if isConnettore(c)
-            puts c 
+            puts c
         else 
-            puts "il connettore per " + c + " non esiste ancora"
+            puts "il connettore" + c + "non esiste ancora"
         end
     }
 end
