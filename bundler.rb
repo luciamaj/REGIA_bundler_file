@@ -1,9 +1,11 @@
 #!/usr/bin/env ruby
+Encoding.default_external = Encoding::UTF_8
 
 require 'json'
 require 'fileutils'
 
 # TODO: Il bundler funziona solo se lanciato dalla directory in cui e' l'eseguibile
+# TODO: Fare push in http
 
 $dir = File.dirname(File.realpath(__FILE__))
 
