@@ -76,9 +76,9 @@ let data =
     Dir.mkdir("pacchetti/#{topic}/#{layout}/data") unless File.exists?("pacchetti/#{topic}/#{layout}/data")
 
     Dir.chdir("pacchetti/#{topic}") do
-        puts "creazione chiave git"
-           `eval $(ssh-agent -s) && ssh-add /var/www/vhosts/regia/marcegaglia/desk/bundle/pacchetti/.ssh/marcegaglia`
-        puts ""
+        #puts "creazione chiave git"
+           #`eval $(ssh-agent -s) && ssh-add /var/www/vhosts/regia/marcegaglia/desk/bundle/pacchetti/.ssh/marcegaglia`
+        #puts ""
 
         puts topic
 
@@ -149,6 +149,9 @@ let data =
         status = `git status 2>&1`
 
         puts "push"
+        puts "creazione chiave git"
+            `eval $(ssh-agent -s) && ssh-add /var/www/vhosts/regia/marcegaglia/desk/bundle/pacchetti/.ssh/marcegaglia`
+        puts ""
         `git push`
 
         if status.include? "working tree clean"
