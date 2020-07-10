@@ -76,10 +76,6 @@ let data =
     Dir.mkdir("pacchetti/#{topic}/#{layout}/data") unless File.exists?("pacchetti/#{topic}/#{layout}/data")
 
     Dir.chdir("pacchetti/#{topic}") do
-        #puts "creazione chiave git"
-           #`eval $(ssh-agent -s) && ssh-add /var/www/vhosts/regia/marcegaglia/desk/bundle/pacchetti/.ssh/marcegaglia`
-        #puts ""
-
         puts topic
 
         status = `git status 2>&1`
@@ -98,18 +94,19 @@ let data =
     
     # qui si rompe per qualche motivo
 
-    puts "exit 3 #{layout} #{topic}"
-
     FileUtils.cp_r("layouts/#{layout}/.", "pacchetti/#{topic}/#{layout}/layout");
 
-    puts "exit 4 #{layout} #{topic}"
-        
     File.write("pacchetti/#{topic}/#{layout}/data/data.js", dataString);
     filesRegex = /\"([^\"]+\.[^\"]+)\"/
     files = jsonData.scan(filesRegex).map { |m| m[0] }
     puts "Asset da caricare"
+
     files.each { |f|
-        path = "assets/#{f}"
+        configDataPath = `#{$dir}/config/config.rb`
+        dataPathJson = JSON.parse(configDataPath)
+        filesPath = dataPathJson["path_assets"]
+
+        path = "#{filesPath}#{f}"
         # puts path;
         if File.file?(path)
             puts "\u2713 #{path}"
