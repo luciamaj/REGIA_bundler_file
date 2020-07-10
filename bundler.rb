@@ -4,9 +4,6 @@ Encoding.default_external = Encoding::UTF_8
 require 'json'
 require 'fileutils'
 
-# TODO: Il bundler funziona solo se lanciato dalla directory in cui e' l'eseguibile
-# TODO: Fare push in http
-
 $dir = File.dirname(File.realpath(__FILE__))
 
 @connettori = Dir["#{$dir}/connettori/*"].map { |p| File.basename(p, File.extname(p)) }
@@ -29,8 +26,6 @@ topicArray.each { |t|
     }
 }
 
-# puts "APPSAPI", appsAPI[0]
-
 def isConnettore(connettore)
     @connettori.include?(connettore);
 end
@@ -44,7 +39,8 @@ end
 
 def log(topic)
     Dir.chdir("pacchetti/#{topic}") do
-        log = `git log master --pretty=format:"%h"`
+        log = `git log  -n 5 master --pretty=format:"%B"`
+        
         return log
     end
 end
@@ -97,9 +93,11 @@ let data =
     FileUtils.cp_r("layouts/#{layout}/.", "pacchetti/#{topic}/#{layout}/layout");
 
     File.write("pacchetti/#{topic}/#{layout}/data/data.js", dataString);
-    filesRegex = /\"([^\"]+\.[^\"]+)\"/
+    filesRegex = /\"([^\"]+\.(\w+)+)\"/
+    #filesRegex = /\"([^\"]+\.[^\"]+)\"/
     files = jsonData.scan(filesRegex).map { |m| m[0] }
-    puts "Asset da caricare"
+
+    puts "Asset da caricare #{files}"
 
     files.each { |f|
         configDataPath = `#{$dir}/config/config.rb`
@@ -157,7 +155,7 @@ let data =
     end
     # END CACHE MANIFEST
     
-    puts "Versioni:"
+    puts "Ultimi 5 commit:"
     puts log(topic)
 end
 
