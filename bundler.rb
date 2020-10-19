@@ -130,7 +130,7 @@ let data =
 
     # MOVE CONFIG FILES IF ROKU
     if type == "player"
-        FileUtils.cp_r("roku-util/.", "pacchetti/#{$museo}/#{topic}");
+        FileUtils.cp_r("player-util/.", "pacchetti/#{$museo}/#{topic}");
     end
 
     if type == "pc"
