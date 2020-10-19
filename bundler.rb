@@ -4,11 +4,15 @@ Encoding.default_external = Encoding::UTF_8
 require 'json'
 require 'fileutils'
 
-$dir = File.dirname(File.realpath(__FILE__))
+$dir = "#{File.dirname(File.realpath(__FILE__))}"
 
-@connettori = Dir["#{$dir}/connettori/*"].map { |p| File.basename(p, File.extname(p)) }
+configDataPath = `#{$dir}/config/config.rb`
+dataPathJson = JSON.parse(configDataPath)
+$museo = dataPathJson["museo"]
 
-jsonData = `#{$dir}/topics/topics.rb`;
+@connettori = Dir["#{$dir}/connettori/#{$museo}/*"].map { |p| File.basename(p, File.extname(p)) }
+
+jsonData = `#{$dir}/topics/#{$museo}/topics.rb`;
 topicsJSON = JSON.parse(jsonData);
 topicArray = topicsJSON["data"]["result"];
 topics = [];
@@ -31,14 +35,14 @@ def isConnettore(connettore)
 end
 
 def versioni(topic)
-    Dir.chdir("pacchetti/#{topic}") do
+    Dir.chdir("pacchetti/#{$museo}/#{topic}") do
         versioni = `git log master --pretty=format:"%h" | cut -d " " -f 1`.split("\n")
         return versioni
     end
 end
 
 def log(topic)
-    Dir.chdir("pacchetti/#{topic}") do
+    Dir.chdir("pacchetti/#{$museo}/#{topic}") do
         log = `git log  -n 5 master --pretty=format:"%B"`
         
         return log
@@ -46,7 +50,7 @@ def log(topic)
 end
 
 def publish(connettore)
-    jsonData = `#{$dir}/connettori/#{connettore}.rb`;
+    jsonData = `#{$dir}/connettori/#{$museo}/#{connettore}.rb`;
     data = JSON.parse(jsonData);
     
     topic = data["topic"];
@@ -59,19 +63,19 @@ let data =
 
     # TODO: Spostare in def init(connettore)
     # crea la cartella pacchetti (se non esiste *)
-    Dir.mkdir("pacchetti") unless File.exists?("pacchetti")
+    Dir.mkdir("pacchetti/#{$museo}") unless File.exists?("pacchetti/#{$museo}")
     # crea la cartella per i topic
-    Dir.mkdir("pacchetti/#{topic}") unless File.exists?("pacchetti/#{topic}")
+    Dir.mkdir("pacchetti/#{$museo}/#{topic}") unless File.exists?("pacchetti/#{$museo}/#{topic}")
     # crea la cartella per l'app
-    Dir.mkdir("pacchetti/#{topic}/#{layout}") unless File.exists?("pacchetti/#{topic}/#{layout}")
+    Dir.mkdir("pacchetti/#{$museo}/#{topic}/#{layout}") unless File.exists?("pacchetti/#{$museo}/#{topic}/#{layout}")
     # crea la cartella per il layout
-    Dir.mkdir("pacchetti/#{topic}/#{layout}/layout") unless File.exists?("pacchetti/#{topic}/#{layout}/layout")
+    Dir.mkdir("pacchetti/#{$museo}/#{topic}/#{layout}/layout") unless File.exists?("pacchetti/#{$museo}/#{topic}/#{layout}/layout")
     # crea la cartella per gli assets
-    Dir.mkdir("pacchetti/#{topic}/#{layout}/layout/assets") unless File.exists?("pacchetti/#{topic}/#{layout}/layout/assets")
+    Dir.mkdir("pacchetti/#{$museo}/#{topic}/#{layout}/layout/assets") unless File.exists?("pacchetti/#{$museo}/#{topic}/#{layout}/layout/assets")
     # crea la cartella per data
-    Dir.mkdir("pacchetti/#{topic}/#{layout}/data") unless File.exists?("pacchetti/#{topic}/#{layout}/data")
+    Dir.mkdir("pacchetti/#{$museo}/#{topic}/#{layout}/data") unless File.exists?("pacchetti/#{$museo}/#{topic}/#{layout}/data")
 
-    Dir.chdir("pacchetti/#{topic}") do
+    Dir.chdir("pacchetti/#{$museo}/#{topic}") do
         puts topic
 
         status = `git status 2>&1`
@@ -90,9 +94,9 @@ let data =
     
     # qui si rompe per qualche motivo
 
-    FileUtils.cp_r("layouts/#{layout}/.", "pacchetti/#{topic}/#{layout}/layout");
+    FileUtils.cp_r("layouts/#{$museo}/#{layout}/.", "pacchetti/#{$museo}/#{topic}/#{layout}/layout");
 
-    File.write("pacchetti/#{topic}/#{layout}/data/data.js", dataString);
+    File.write("pacchetti/#{$museo}/#{topic}/#{layout}/data/data.js", dataString);
     filesRegex = /\"([^\"]+\.(\w+)+)\"/
     #filesRegex = /\"([^\"]+\.[^\"]+)\"/
     files = jsonData.scan(filesRegex).map { |m| m[0] }
@@ -108,16 +112,16 @@ let data =
         # puts path;
         if File.file?(path)
             puts "\u2713 #{path}"
-            FileUtils.ln_sf(File.realpath(path), "pacchetti/#{topic}/#{layout}/layout/assets")
+            FileUtils.ln_sf(File.realpath(path), "pacchetti/#{$museo}/#{topic}/#{layout}/layout/assets")
         else
             puts "\u2717 #{path}"
         end
     }
     puts ""
 
-    filesInFolder = Dir["#{$dir}/pacchetti/#{topic}/#{layout}/layout/assets/*"].map { |p| File.basename(p) }
+    filesInFolder = Dir["#{$dir}/pacchetti/#{$museo}/#{topic}/#{layout}/layout/assets/*"].map { |p| File.basename(p) }
     filesInFolder.each { |f| 
-        path = "#{$dir}/pacchetti/#{topic}/#{layout}/layout/assets/#{f}"
+        path = "#{$dir}/pacchetti/#{$museo}/#{topic}/#{layout}/layout/assets/#{f}"
         if !files.include?(f) 
             # puts "Removing #{path}"
             FileUtils.rm(path)
@@ -126,17 +130,17 @@ let data =
 
     # MOVE CONFIG FILES IF ROKU
     if type == "player"
-        FileUtils.cp_r("roku-util/.", "pacchetti/#{topic}");
+        FileUtils.cp_r("roku-util/.", "pacchetti/#{$museo}/#{topic}");
     end
 
     if type == "pc"
-        FileUtils.cp_r("pc-util/.", "pacchetti/#{topic}");
+        FileUtils.cp_r("pc-util/.", "pacchetti/#{$museo}/#{topic}");
     end
 
     # WRITE CACHE MANIFEST
     puts "sto scrivendo il manifest";
 
-    Dir.chdir("pacchetti/#{topic}") do
+    Dir.chdir("pacchetti/#{$museo}/#{topic}") do
         files =  Dir.glob("**/*").select{ |e| File.file? e };
         manifest = File.new("manifest.mf", "w");
         manifest.puts("CACHE:")
@@ -153,7 +157,6 @@ let data =
             exit
         end
         
-        puts "sono qui"
         `git add -A .`
         `git commit -m "#{Time.now.strftime("%d/%m/%Y %H:%M:%S")}"`
         `git push`
@@ -190,7 +193,7 @@ elsif ARGV[0] == 'versione_corrente'
         exit
     end
 
-    Dir.chdir("pacchetti/#{topic}") do
+    Dir.chdir("pacchetti/#{$museo}/#{topic}") do
         versione = `git log -1 --pretty=format:"%h"`
         puts versione
     end
@@ -226,7 +229,7 @@ elsif ARGV[0] == 'resetta'
     end
         
     puts "Resetto a #{selezionata}"
-    Dir.chdir("pacchetti/#{topic}") do
+    Dir.chdir("pacchetti/#{$museo}/#{topic}") do
         `git checkout #{selezionata} 2>&1`
     end
 
