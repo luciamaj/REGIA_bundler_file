@@ -128,6 +128,11 @@ let data =
     if type == "player"
         FileUtils.cp_r("roku-util/.", "pacchetti/#{topic}");
     end
+
+    if type == "pc"
+        FileUtils.cp_r("pc-util/.", "pacchetti/#{topic}");
+    end
+
     # WRITE CACHE MANIFEST
     puts "sto scrivendo il manifest";
 
@@ -150,7 +155,7 @@ let data =
         
         puts "sono qui"
         `git add -A .`
-        `git commit -m "#{Time.now}"`
+        `git commit -m "#{Time.now.strftime("%d/%m/%Y %H:%M:%S")}"`
         `git push`
     end
     # END CACHE MANIFEST
